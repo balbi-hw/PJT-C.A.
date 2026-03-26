@@ -5,7 +5,7 @@ import model.WordCard;
 import java.util.ArrayList;
 
 public class Repository {
-    ArrayList<WordCard> cards = new ArrayList<>();
+    private final ArrayList<WordCard> cards = new ArrayList<>();
 
     public void add(WordCard wordCard) {
         cards.add(wordCard);
@@ -25,7 +25,6 @@ public class Repository {
         return null;
     }
 
-
     public Boolean deleteByWord(String target) {
         for (int i = 0; i < cards.size(); i++) {
             if (cards.get(i).getWord().equals(target)) {
@@ -34,5 +33,13 @@ public class Repository {
             }
         }
         return false;
+    }
+
+    public void updateMeaning(WordCard card, String newMean) {
+        card.setMeaning(newMean);
+    }
+
+    public void updateExample(WordCard card, String newExample) {
+        card.setExample(newExample);
     }
 }

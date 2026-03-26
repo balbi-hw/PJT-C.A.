@@ -22,7 +22,11 @@ public class WordCard {
         this.example = example;
     }
 
-    //예문 입력 메서드
+    //set 메서드
+
+    public void setMeaning(String meaning) {
+        this.meaning = meaning;
+    }
     public void setExample(String example) {
         this.example = example;
     }
