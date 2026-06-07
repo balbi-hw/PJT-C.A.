@@ -10,4 +10,5 @@ public class ImageSearchResultDto {
     private String thumbnailUrl;
     private String source;
     private String author;
+    private String sourceUrl;
 }
