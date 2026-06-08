@@ -17,3 +17,7 @@ logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
+
+pexels:
+  api-key: ${PEXELS_API_KEY}
+  base-url: https://api.pexels.com/v1

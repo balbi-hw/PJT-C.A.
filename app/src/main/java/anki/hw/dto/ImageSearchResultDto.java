@@ -11,4 +11,5 @@ public class ImageSearchResultDto {
     private String source;
     private String author;
     private String sourceUrl;
+    private String alt;
 }
