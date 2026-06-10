@@ -20,11 +20,33 @@ public class CardService {
     private final DeckRepository deckRepository;
 
     @Transactional
-    public Long createCard(Long deckId, String word, String meaning) {
+    public Long createCard(
+            Long deckId,
+            String word,
+            String meaning,
+            String imageUrl,
+            String imageThumbnailUrl,
+            String imageSource,
+            String imageAuthor,
+            String imageSourceUrl
+    ) {
         Deck deck = deckRepository.findOne(deckId);
+
         Card card = Card.createCard(word, meaning);
+
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            card.changeImage(
+                    imageUrl,
+                    imageThumbnailUrl,
+                    imageSource,
+                    imageAuthor,
+                    imageSourceUrl
+            );
+        }
+
         deck.addCard(card);
         cardRepository.save(card);
+
         return card.getId();
     }
 

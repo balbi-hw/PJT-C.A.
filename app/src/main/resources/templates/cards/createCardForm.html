@@ -4,6 +4,54 @@
     <meta charset="UTF-8">
     <title>카드 등록</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .image-result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .image-result-item {
+            border: 2px solid transparent;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            transition: border-color 0.15s ease, transform 0.15s ease;
+        }
+
+        .image-result-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .image-result-item.selected {
+            border-color: #ffc107;
+        }
+
+        .image-result-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .image-meta {
+            padding: 6px 8px;
+            font-size: 12px;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .selected-image-preview img {
+            width: 180px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
 </head>
 <body>
 <div class="container py-5">
@@ -31,9 +79,196 @@
             <input type="text" id="meaning" name="meaning" class="form-control" placeholder="예: 사과" required>
         </div>
 
+        <div class="mb-4">
+            <label for="imageKeyword" class="form-label">이미지 검색</label>
+            <div class="input-group">
+                <input type="text" id="imageKeyword" class="form-control" placeholder="예: apple">
+                <button type="button" class="btn btn-outline-warning" onclick="searchImages()">검색</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="searchByWord()">단어로 검색</button>
+            </div>
+            <div class="form-text">
+                이미지를 선택하면 카드 저장 시 이미지 URL과 출처 정보가 함께 저장됩니다.
+            </div>
+
+            <input type="hidden" id="imageUrl" name="imageUrl">
+            <input type="hidden" id="imageThumbnailUrl" name="imageThumbnailUrl">
+            <input type="hidden" id="imageSource" name="imageSource">
+            <input type="hidden" id="imageAuthor" name="imageAuthor">
+            <input type="hidden" id="imageSourceUrl" name="imageSourceUrl">
+
+            <div id="imageSearchMessage" class="mt-3 text-muted"></div>
+            <div id="imageResult" class="image-result-grid mt-3"></div>
+
+            <div id="selectedImagePreview" class="selected-image-preview mt-3 d-none">
+                <div class="fw-bold mb-2">선택한 이미지</div>
+                <img id="previewImage" src="" alt="선택한 이미지">
+                <div id="previewMeta" class="small text-muted mt-2"></div>
+                <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearSelectedImage()">
+                    선택 해제
+                </button>
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-warning">등록</button>
         <a href="/cards" class="btn btn-outline-secondary">취소</a>
     </form>
 </div>
+
+<script>
+    const imageKeywordInput = document.getElementById("imageKeyword");
+    const wordInput = document.getElementById("word");
+    const imageResult = document.getElementById("imageResult");
+    const imageSearchMessage = document.getElementById("imageSearchMessage");
+    const selectedImagePreview = document.getElementById("selectedImagePreview");
+    const previewImage = document.getElementById("previewImage");
+    const previewMeta = document.getElementById("previewMeta");
+
+    const imageUrlInput = document.getElementById("imageUrl");
+    const imageThumbnailUrlInput = document.getElementById("imageThumbnailUrl");
+    const imageSourceInput = document.getElementById("imageSource");
+    const imageAuthorInput = document.getElementById("imageAuthor");
+    const imageSourceUrlInput = document.getElementById("imageSourceUrl");
+
+    imageKeywordInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            searchImages();
+        }
+    });
+
+    function searchByWord() {
+        const word = wordInput.value.trim();
+
+        if (!word) {
+            alert("먼저 단어를 입력해주세요.");
+            wordInput.focus();
+            return;
+        }
+
+        imageKeywordInput.value = word;
+        searchImages();
+    }
+
+    async function searchImages() {
+        const keyword = imageKeywordInput.value.trim();
+
+        if (!keyword) {
+            alert("이미지 검색어를 입력해주세요.");
+            imageKeywordInput.focus();
+            return;
+        }
+
+        clearSelectedImage();
+        imageResult.innerHTML = "";
+        imageSearchMessage.textContent = "이미지를 검색하고 있습니다.";
+
+        try {
+            const response = await fetch(`/api/images/search?query=${encodeURIComponent(keyword)}`);
+
+            if (!response.ok) {
+                throw new Error("이미지 검색 요청에 실패했습니다.");
+            }
+
+            const images = await response.json();
+            renderImages(images);
+        } catch (error) {
+            console.error(error);
+            imageSearchMessage.textContent = "이미지 검색 중 오류가 발생했습니다.";
+        }
+    }
+
+    function renderImages(images) {
+        imageResult.innerHTML = "";
+
+        if (!images || images.length === 0) {
+            imageSearchMessage.textContent = "검색 결과가 없습니다.";
+            return;
+        }
+
+        imageSearchMessage.textContent = `${images.length}개의 이미지를 찾았습니다.`;
+
+        images.forEach(image => {
+            const item = document.createElement("div");
+            item.className = "image-result-item";
+
+            const img = document.createElement("img");
+            img.src = getThumbnailUrl(image);
+            img.alt = image.alt || "검색 이미지";
+
+            const meta = document.createElement("div");
+            meta.className = "image-meta";
+            meta.textContent = getImageMetaText(image);
+
+            item.appendChild(img);
+            item.appendChild(meta);
+            item.addEventListener("click", function () {
+                selectImage(item, image);
+            });
+
+            imageResult.appendChild(item);
+        });
+    }
+
+    function selectImage(selectedItem, image) {
+        document.querySelectorAll(".image-result-item")
+            .forEach(item => item.classList.remove("selected"));
+
+        selectedItem.classList.add("selected");
+
+        const imageUrl = image.imageUrl || "";
+        const thumbnailUrl = getThumbnailUrl(image);
+        const source = image.imageSource || image.source || "";
+        const author = image.imageAuthor || image.author || "";
+        const sourceUrl = image.imageSourceUrl || image.sourceUrl || "";
+
+        imageUrlInput.value = imageUrl;
+        imageThumbnailUrlInput.value = thumbnailUrl;
+        imageSourceInput.value = source;
+        imageAuthorInput.value = author;
+        imageSourceUrlInput.value = sourceUrl;
+
+        previewImage.src = thumbnailUrl || imageUrl;
+        previewMeta.textContent = getImageMetaText(image);
+        selectedImagePreview.classList.remove("d-none");
+    }
+
+    function clearSelectedImage() {
+        imageUrlInput.value = "";
+        imageThumbnailUrlInput.value = "";
+        imageSourceInput.value = "";
+        imageAuthorInput.value = "";
+        imageSourceUrlInput.value = "";
+
+        previewImage.src = "";
+        previewMeta.textContent = "";
+        selectedImagePreview.classList.add("d-none");
+
+        document.querySelectorAll(".image-result-item")
+            .forEach(item => item.classList.remove("selected"));
+    }
+
+    function getThumbnailUrl(image) {
+        return image.imageThumbnailUrl || image.thumbnailUrl || image.imageUrl || "";
+    }
+
+    function getImageMetaText(image) {
+        const source = image.imageSource || image.source || "";
+        const author = image.imageAuthor || image.author || "";
+
+        if (source && author) {
+            return `${source} · ${author}`;
+        }
+
+        if (source) {
+            return source;
+        }
+
+        if (author) {
+            return author;
+        }
+
+        return "출처 정보 없음";
+    }
+</script>
 </body>
 </html>

@@ -38,8 +38,24 @@ public class CardController {
     @PostMapping("/cards/new")
     public String create(@RequestParam Long deckId,
                          @RequestParam String word,
-                         @RequestParam String meaning) {
-        cardService.createCard(deckId, word, meaning);
+                         @RequestParam String meaning,
+                         @RequestParam(required = false) String imageUrl,
+                         @RequestParam(required = false) String imageThumbnailUrl,
+                         @RequestParam(required = false) String imageSource,
+                         @RequestParam(required = false) String imageAuthor,
+                         @RequestParam(required = false) String imageSourceUrl) {
+
+        cardService.createCard(
+                deckId,
+                word,
+                meaning,
+                imageUrl,
+                imageThumbnailUrl,
+                imageSource,
+                imageAuthor,
+                imageSourceUrl
+        );
+
         return "redirect:/cards?deckId=" + deckId;
     }
 }
