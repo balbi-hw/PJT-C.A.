@@ -326,6 +326,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Spring local configuration with secrets
+application-local.yml
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -377,3 +380,6 @@ cython_debug/
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/django,visualstudiocode
+
+# AGENTS.md
+AGENTS.md
